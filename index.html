@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการรายรับรายจ่ายวัดหนองหล่ม</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gray-100 text-gray-800; /* Light gray background, dark text */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .nav-button.active {
+            @apply bg-amber-700 text-white shadow-lg; /* Active button with warmer tone */
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <div class="container mx-auto p-4 flex-grow">
+        <!-- Header without Logo -->
+        <header class="flex flex-col items-center justify-center bg-white p-6 rounded-xl shadow-xl mb-8">
+            <h1 class="text-5xl font-extrabold text-amber-800 text-center">
+                ระบบจัดการรายรับรายจ่ายวัดหนองหล่ม
+            </h1>
+            <p class="text-xl text-gray-600 mt-2 text-center">เพิ่มความโปร่งใสและง่ายดายในการบริหารจัดการเงิน</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex justify-center mb-8 bg-white p-4 rounded-xl shadow-md">
+            <button id="recordNavBtn" class="nav-button px-8 py-4 mx-3 rounded-2xl transition-all duration-300 ease-in-out font-bold text-xl text-amber-800 hover:bg-amber-100 active">
+                บันทึกรายรับ-รายจ่าย
+            </button>
+            <button id="viewNavBtn" class="nav-button px-8 py-4 mx-3 rounded-2xl transition-all duration-300 ease-in-out font-bold text-xl text-amber-800 hover:bg-amber-100">
+                ดูข้อมูล
+            </button>
+            <button id="configNavBtn" class="nav-button px-8 py-4 mx-3 rounded-2xl transition-all duration-300 ease-in-out font-bold text-xl text-amber-800 hover:bg-amber-100">
+                ตั้งค่าหมวดหมู่
+            </button>
+        </nav>
+
+        <!-- Record Transaction Page -->
+        <div id="recordPage" class="tab-content active bg-white p-10 rounded-xl shadow-xl mb-8">
+            <h2 class="text-4xl font-bold text-amber-700 mb-8 text-center border-b-2 pb-4 border-amber-200">บันทึกรายรับ-รายจ่าย</h2>
+            <form id="recordTransactionForm" class="space-y-8">
+                <div>
+                    <label for="transactionType" class="block text-2xl font-semibold text-gray-700 mb-3">ประเภท:</label>
+                    <select id="transactionType" class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800 appearance-none">
+                        <option value="income">รายรับ</option>
+                        <option value="expense">รายจ่าย</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="transactionDate" class="block text-2xl font-semibold text-gray-700 mb-3">วันที่:</label>
+                    <input type="date" id="transactionDate" required class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800">
+                </div>
+
+                <div>
+                    <label for="transactionAmount" class="block text-2xl font-semibold text-gray-700 mb-3">จำนวนเงิน:</label>
+                    <input type="number" id="transactionAmount" placeholder="กรอกจำนวนเงิน" required class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800">
+                </div>
+
+                <div>
+                    <label for="transactionCategory" class="block text-2xl font-semibold text-gray-700 mb-3">หมวดหมู่:</label>
+                    <select id="transactionCategory" required class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800 appearance-none">
+                        <!-- Categories will be loaded here by JavaScript -->
+                    </select>
+                </div>
+
+                <div>
+                    <label for="transactionDescription" class="block text-2xl font-semibold text-gray-700 mb-3">รายละเอียด:</label>
+                    <textarea id="transactionDescription" rows="4" placeholder="กรอกรายละเอียด (ไม่บังคับ)" class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800"></textarea>
+                </div>
+
+                <div>
+                    <label for="billImageInput" class="block text-2xl font-semibold text-gray-700 mb-3">อัปโหลดรูปบิล (ไม่บังคับ):</label>
+                    <input type="file" id="billImageInput" accept="image/*" class="mt-1 block w-full text-xl text-gray-900 border border-gray-300 rounded-xl cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xl file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
+                    <p id="imageUploadStatus" class="mt-3 text-base text-gray-600"></p>
+                </div>
+
+                <button type="submit" class="w-full bg-amber-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-amber-700 transition-colors duration-300 text-2xl shadow-lg transform hover:scale-105">
+                    บันทึกข้อมูล
+                </button>
+            </form>
+        </div>
+
+        <!-- View Data Page -->
+        <div id="viewPage" class="tab-content bg-white p-10 rounded-xl shadow-xl mb-8">
+            <h2 class="text-4xl font-bold text-amber-700 mb-8 text-center border-b-2 pb-4 border-amber-200">ดูข้อมูลรายรับ-รายจ่าย</h2>
+
+            <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8 mb-8 justify-center">
+                <div class="flex-1">
+                    <label for="monthSelect" class="block text-2xl font-semibold text-gray-700 mb-3">เลือกเดือน:</label>
+                    <select id="monthSelect" class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800 appearance-none">
+                        <!-- Months will be loaded here -->
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label for="yearSelect" class="block text-2xl font-semibold text-gray-700 mb-3">เลือกปี:</label>
+                    <select id="yearSelect" class="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-amber-500 focus:border-amber-500 text-xl bg-gray-50 text-gray-800 appearance-none">
+                        <!-- Years will be loaded here -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button id="showMonthlySummaryBtn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                    สรุปรายรับ-รายจ่ายรายเดือน
+                </button>
+                <button id="showAnnualSummaryBtn" class="bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                    สรุปรายรับ-รายจ่ายรายปี
+                </button>
+            </div>
+
+            <div id="monthlySummarySection" class="active-summary">
+                <div class="flex flex-col md:flex-row items-center justify-between mb-6">
+                    <h3 class="text-3xl font-bold text-amber-600 text-center md:text-left flex-grow mb-4 md:mb-0">สรุปรายรับ-รายจ่ายประจำเดือน</h3>
+                    <button id="printMonthlyPdfBtn" class="bg-purple-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-purple-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                        พิมพ์ (PDF)
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+                    <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100">
+                        <canvas id="pieChartCanvas" class="w-full h-80"></canvas>
+                    </div>
+                    <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100 flex flex-col justify-center">
+                        <h4 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 border-amber-200">สรุปยอดรวม</h4>
+                        <p class="text-xl mb-3">รายรับรวม: <span id="totalIncome" class="font-bold text-green-700">0.00</span> บาท</p>
+                        <p class="text-xl mb-3">รายจ่ายรวม: <span id="totalExpense" class="font-bold text-red-700">0.00</span> บาท</p>
+                        <p class="text-3xl font-bold mt-4">คงเหลือ: <span id="balance" class="text-blue-700">0.00</span> บาท</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-center mb-8">
+                    <button id="analyzeMonthlyDataBtn" class="bg-orange-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-orange-600 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                        วิเคราะห์ข้อมูลด้วย AI ✨
+                    </button>
+                </div>
+                <div id="monthlyAnalysisResult" class="bg-gray-50 p-8 rounded-xl shadow-inner border border-gray-100 mb-10 text-lg hidden">
+                    <h4 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 border-gray-200">ผลการวิเคราะห์โดย AI</h4>
+                    <p id="monthlyAnalysisContent" class="text-gray-700 italic">
+                        <!-- AI analysis will be displayed here -->
+                    </p>
+                    <div id="monthlyAnalysisLoader" class="hidden flex justify-center items-center mt-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        <span class="ml-3 text-gray-600">กำลังวิเคราะห์...</span>
+                    </div>
+                </div>
+
+
+                <h3 class="text-3xl font-bold text-amber-600 mb-6 text-center border-b-2 pb-4 border-amber-200">รายการรายรับ-รายจ่าย</h3>
+                <div class="overflow-x-auto rounded-xl shadow-lg border border-amber-100">
+                    <table class="min-w-full bg-white rounded-xl" id="monthlyTransactionsTable">
+                        <thead class="bg-amber-100">
+                            <tr>
+                                <th class="py-4 px-5 text-left text-xl font-semibold text-amber-800 rounded-tl-xl">วันที่</th>
+                                <th class="py-4 px-5 text-left text-xl font-semibold text-amber-800">ประเภท</th>
+                                <th class="py-4 px-5 text-left text-xl font-semibold text-amber-800">หมวดหมู่</th>
+                                <th class="py-4 px-5 text-left text-xl font-semibold text-amber-800">รายละเอียด</th>
+                                <th class="py-4 px-5 text-right text-xl font-semibold text-amber-800">จำนวนเงิน</th>
+                                <th class="py-4 px-5 text-center text-xl font-semibold text-amber-800">บิล</th>
+                                <th class="py-4 px-5 text-center text-xl font-semibold text-amber-800 rounded-tr-xl">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody" class="divide-y divide-amber-200">
+                            <!-- Transactions will be loaded here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="annualSummarySection" class="hidden">
+                <div class="flex flex-col md:flex-row items-center justify-between mb-6">
+                    <h3 class="text-3xl font-bold text-amber-600 text-center md:text-left flex-grow mb-4 md:mb-0">สรุปรายรับ-รายจ่ายรายปี</h3>
+                    <button id="printAnnualPdfBtn" class="bg-purple-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-purple-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                        พิมพ์ (PDF)
+                    </button>
+                </div>
+                <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100 mb-10">
+                    <canvas id="monthlyChartCanvas" class="w-full h-96"></canvas>
+                </div>
+
+                <!-- Annual Totals Summary -->
+                <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100 flex flex-col justify-center mb-10">
+                    <h4 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 border-amber-200">สรุปยอดรวมรายปี</h4>
+                    <p class="text-xl mb-3">รายรับรวมทั้งปี: <span id="annualTotalIncome" class="font-bold text-green-700">0.00</span> บาท</p>
+                    <p class="text-xl mb-3">รายจ่ายรวมทั้งปี: <span id="annualTotalExpense" class="font-bold text-red-700">0.00</span> บาท</p>
+                    <p class="text-3xl font-bold mt-4">คงเหลือสิ้นปี: <span id="annualBalance" class="font-bold text-blue-700">0.00</span> บาท</p>
+                </div>
+
+                <!-- Annual Category Summary -->
+                <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100 mb-10">
+                    <h4 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 border-amber-200">สรุปรายรับ-รายจ่ายตามหมวดหมู่รายปี</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h5 class="text-xl font-semibold text-green-700 mb-2">หมวดหมู่รายรับ</h5>
+                            <ul id="annualIncomeCategoryList" class="list-disc list-inside text-lg space-y-1">
+                                <!-- Annual income categories will be listed here -->
+                            </ul>
+                            <p id="noAnnualIncomeCategories" class="text-gray-500 text-lg mt-2 hidden">ไม่มีข้อมูลหมวดหมู่รายรับ</p>
+                        </div>
+                        <div>
+                            <h5 class="text-xl font-semibold text-red-700 mb-2">หมวดหมู่รายจ่าย</h5>
+                            <ul id="annualExpenseCategoryList" class="list-disc list-inside text-lg space-y-1">
+                                <!-- Annual expense categories will be listed here -->
+                            </ul>
+                            <p id="noAnnualExpenseCategories" class="text-gray-500 text-lg mt-2 hidden">ไม่มีข้อมูลหมวดหมู่รายจ่าย</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center mb-8">
+                    <button id="analyzeAnnualDataBtn" class="bg-orange-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-orange-600 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                        วิเคราะห์ข้อมูลด้วย AI ✨
+                    </button>
+                </div>
+                <div id="annualAnalysisResult" class="bg-gray-50 p-8 rounded-xl shadow-inner border border-gray-100 mb-10 text-lg hidden">
+                    <h4 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 border-gray-200">ผลการวิเคราะห์โดย AI</h4>
+                    <p id="annualAnalysisContent" class="text-gray-700 italic">
+                        <!-- AI analysis will be displayed here -->
+                    </p>
+                    <div id="annualAnalysisLoader" class="hidden flex justify-center items-center mt-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        <span class="ml-3 text-gray-600">กำลังวิเคราะห์...</span>
+                    </div>
+                </div>
+
+
+                <div class="overflow-x-auto rounded-xl shadow-lg border border-amber-100">
+                    <table class="min-w-full bg-white rounded-xl" id="annualSummaryTable">
+                        <thead class="bg-amber-100">
+                            <tr>
+                                <th class="py-4 px-5 text-left text-xl font-semibold text-amber-800 rounded-tl-xl">เดือน</th>
+                                <th class="py-4 px-5 text-right text-xl font-semibold text-amber-800">รายรับ</th>
+                                <th class="py-4 px-5 text-right text-xl font-semibold text-amber-800">รายจ่าย</th>
+                                <th class="py-4 px-5 text-right text-xl font-semibold text-amber-800 rounded-tr-xl">คงเหลือ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="annualSummaryTableBody" class="divide-y divide-amber-200">
+                            <!-- Annual summary data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Page -->
+        <div id="configPage" class="tab-content bg-white p-10 rounded-xl shadow-xl mb-8">
+            <h2 class="text-4xl font-bold text-amber-700 mb-8 text-center border-b-2 pb-4 border-amber-200">ตั้งค่าหมวดหมู่</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Income Categories -->
+                <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100">
+                    <h3 class="text-3xl font-bold text-green-700 mb-6 text-center border-b pb-3 border-green-200">หมวดหมู่รายรับ</h3>
+                    <form id="addIncomeCategoryForm" class="flex mb-6">
+                        <input type="text" id="newIncomeCategory" placeholder="เพิ่มหมวดหมู่รายรับใหม่" required class="flex-grow p-4 border border-gray-300 rounded-l-xl shadow-sm focus:ring-green-500 focus:border-green-500 text-xl bg-white text-gray-800">
+                        <button type="submit" class="bg-green-600 text-white font-bold py-4 px-8 rounded-r-xl hover:bg-green-700 transition-colors duration-300 text-xl transform hover:scale-105">
+                            เพิ่ม
+                        </button>
+                    </form>
+                    <ul id="incomeCategoriesList" class="space-y-3">
+                        <!-- Income categories will be loaded here -->
+                    </ul>
+                </div>
+
+                <!-- Expense Categories -->
+                <div class="bg-amber-50 p-8 rounded-xl shadow-inner border border-amber-100">
+                    <h3 class="text-3xl font-bold text-red-700 mb-6 text-center border-b pb-3 border-red-200">หมวดหมู่รายจ่าย</h3>
+                    <form id="addExpenseCategoryForm" class="flex mb-6">
+                        <input type="text" id="newExpenseCategory" placeholder="เพิ่มหมวดหมู่รายจ่ายใหม่" required class="flex-grow p-4 border border-gray-300 rounded-l-xl shadow-sm focus:ring-red-500 focus:border-red-500 text-xl bg-white text-gray-800">
+                        <button type="submit" class="bg-red-600 text-white font-bold py-4 px-8 rounded-r-xl hover:bg-red-700 transition-colors duration-300 text-xl transform hover:scale-105">
+                            เพิ่ม
+                        </button>
+                    </form>
+                    <ul id="expenseCategoriesList" class="space-y-3">
+                        <!-- Expense categories will be loaded here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-lg text-center transform scale-95 transition-transform duration-300 ease-out">
+            <h3 class="text-3xl font-bold mb-5 text-gray-800">ยืนยันการลบ</h3>
+            <p class="mb-8 text-xl text-gray-700">คุณต้องการลบรายการนี้จริงหรือไม่?</p>
+            <div class="flex justify-center space-x-6">
+                <button id="confirmDeleteBtn" class="bg-red-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-red-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                    ลบ
+                </button>
+                <button id="cancelDeleteBtn" class="bg-gray-300 text-gray-800 font-bold py-4 px-8 rounded-xl hover:bg-gray-400 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-lg text-center transform scale-95 transition-transform duration-300 ease-out">
+            <h3 id="messageModalTitle" class="text-3xl font-bold mb-5 text-gray-800">ข้อความ</h3>
+            <p id="messageModalContent" class="mb-8 text-xl text-gray-700"></p>
+            <button id="messageModalCloseBtn" class="bg-amber-600 text-white font-bold py-4 px-8 rounded-xl hover:bg-amber-700 transition-colors duration-300 text-xl shadow-lg transform hover:scale-105">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF Autotable Plugin CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+
+    <script type="module">
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJ6V4DLUUzKRliLL9L-vWBgxCCTd4WKj0",
+            authDomain: "wat-nonglom-lamphun.firebaseapp.com",
+            databaseURL: "https://wat-nonglom-lamphun-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "wat-nonglom-lamphun",
+            storageBucket: "wat-nonglom-lamphun.firebasestorage.app",
+            messagingSenderId: "549871784626",
+            appId: "1:549871784626:web:5c792582fff36d8a6fefab",
+            measurementId: "G-X1FYK71QV7"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        // Using a fixed user ID for data path as multi-user authentication is not specified
+        // and data is specific to "wat-nonglom".
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wat-nonglom-app';
+        const userId = 'watNonglomUser'; // Fixed user ID for this app's data
+        const dbRootPath = `artifacts/${appId}/users/${userId}`; // Firestore-like structure for Realtime DB
+
+        const transactionsRef = database.ref(`${dbRootPath}/transactions`);
+        const incomeCategoriesRef = database.ref(`${dbRootPath}/incomeCategories`);
+        const expenseCategoriesRef = database.ref(`${dbRootPath}/expenseCategories`);
+
+        // DOM Elements
+        const recordNavBtn = document.getElementById('recordNavBtn');
+        const viewNavBtn = document.getElementById('viewNavBtn');
+        const configNavBtn = document.getElementById('configNavBtn');
+
+        const recordPage = document.getElementById('recordPage');
+        const viewPage = document.getElementById('viewPage');
+        const configPage = document.getElementById('configPage');
+
+        const recordTransactionForm = document.getElementById('recordTransactionForm');
+        const transactionTypeSelect = document.getElementById('transactionType');
+        const transactionDateInput = document.getElementById('transactionDate');
+        const transactionAmountInput = document.getElementById('transactionAmount');
+        const transactionCategorySelect = document.getElementById('transactionCategory');
+        const transactionDescriptionInput = document.getElementById('transactionDescription');
+        const billImageInput = document.getElementById('billImageInput');
+        const imageUploadStatus = document.getElementById('imageUploadStatus');
+
+        const monthSelect = document.getElementById('monthSelect');
+        const yearSelect = document.getElementById('yearSelect'); // FIX: Corrected assignment
+        const transactionsTableBody = document.getElementById('transactionsTableBody');
+        const totalIncomeSpan = document.getElementById('totalIncome');
+        const totalExpenseSpan = document.getElementById('totalExpense');
+        const balanceSpan = document.getElementById('balance');
+
+        const addIncomeCategoryForm = document.getElementById('addIncomeCategoryForm');
+        const newIncomeCategoryInput = document.getElementById('newIncomeCategory');
+        const incomeCategoriesList = document.getElementById('incomeCategoriesList');
+
+        const addExpenseCategoryForm = document.getElementById('addExpenseCategoryForm');
+        const newExpenseCategoryInput = document.getElementById('newExpenseCategory');
+        const expenseCategoriesList = document.getElementById('expenseCategoriesList');
+
+        const pieChartCanvas = document.getElementById('pieChartCanvas');
+        const monthlyChartCanvas = document.getElementById('monthlyChartCanvas');
+
+        const showMonthlySummaryBtn = document.getElementById('showMonthlySummaryBtn');
+        const showAnnualSummaryBtn = document.getElementById('showAnnualSummaryBtn');
+        const monthlySummarySection = document.getElementById('monthlySummarySection');
+        const annualSummarySection = document.getElementById('annualSummarySection');
+        const annualSummaryTableBody = document.getElementById('annualSummaryTableBody');
+
+        // New DOM elements for Annual Summary
+        const annualTotalIncomeSpan = document.getElementById('annualTotalIncome');
+        const annualTotalExpenseSpan = document.getElementById('annualTotalExpense');
+        const annualBalanceSpan = document.getElementById('annualBalance');
+        const annualIncomeCategoryList = document.getElementById('annualIncomeCategoryList');
+        const annualExpenseCategoryList = document.getElementById('annualExpenseCategoryList');
+        const noAnnualIncomeCategoriesPara = document.getElementById('noAnnualIncomeCategories');
+        const noAnnualExpenseCategoriesPara = document.getElementById('noAnnualExpenseCategories');
+
+
+        const monthlyTransactionsTable = document.getElementById('monthlyTransactionsTable');
+        const annualSummaryTable = document.getElementById('annualSummaryTable');
+        const printMonthlyPdfBtn = document.getElementById('printMonthlyPdfBtn');
+        const printAnnualPdfBtn = document.getElementById('printAnnualPdfBtn');
+
+        // AI Analysis Elements
+        const analyzeMonthlyDataBtn = document.getElementById('analyzeMonthlyDataBtn');
+        const monthlyAnalysisResult = document.getElementById('monthlyAnalysisResult');
+        const monthlyAnalysisContent = document.getElementById('monthlyAnalysisContent');
+        const monthlyAnalysisLoader = document.getElementById('monthlyAnalysisLoader');
+
+        const annualAnalysisResult = document.getElementById('annualAnalysisResult');
+        const annualAnalysisContent = document.getElementById('annualAnalysisContent');
+        const annualAnalysisLoader = document.getElementById('annualAnalysisLoader');
+
+
+        // Modals
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        let transactionToDeleteKey = null; // To store the key of the transaction being deleted
+        let transactionToDeleteImageUrl = null; // To store image URL for deletion
+
+        const messageModal = document.getElementById('messageModal');
+        const messageModalTitle = document.getElementById('messageModalTitle');
+        const messageModalContent = document.getElementById('messageModalContent');
+        const messageModalCloseBtn = document.getElementById('messageModalCloseBtn');
+
+        // Chart instances
+        let pieChart = null;
+        let monthlyChart = null;
+
+        // Current selected month/year for viewing data
+        let currentMonth = new Date().getMonth() + 1; // 1-12
+        let currentYear = new Date().getFullYear();
+
+        // Variables to store current data for AI analysis
+        let currentMonthlyData = null;
+        let currentAnnualData = null;
+
+        // Helper function to show/hide pages
+        function showPage(pageId) {
+            const pages = [recordPage, viewPage, configPage];
+            pages.forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none'; // Ensure it's hidden properly
+            });
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById(pageId).style.display = 'block'; // Show the selected page
+
+            // Update nav button active state
+            const navButtons = document.querySelectorAll('.nav-button');
+            navButtons.forEach(button => button.classList.remove('active'));
+            if (pageId === 'recordPage') recordNavBtn.classList.add('active');
+            else if (pageId === 'viewPage') viewNavBtn.classList.add('active');
+            else if (pageId === 'configPage') configNavBtn.classList.add('active');
+
+            // Hide AI analysis results when switching pages/summaries
+            monthlyAnalysisResult.classList.add('hidden');
+            annualAnalysisResult.classList.add('hidden');
+            monthlyAnalysisContent.textContent = '';
+            annualAnalysisContent.textContent = '';
+        }
+
+        // Helper function for displaying messages
+        function showMessage(title, content) {
+            messageModalTitle.textContent = title;
+            messageModalContent.textContent = content;
+            messageModal.classList.remove('hidden');
+            // Add a slight animation for the modal appearance
+            messageModal.querySelector('div').classList.add('scale-100');
+            messageModal.querySelector('div').classList.remove('scale-95');
+        }
+
+        // Helper function for closing message modal
+        messageModalCloseBtn.addEventListener('click', () => {
+            messageModal.querySelector('div').classList.add('scale-95');
+            messageModal.querySelector('div').classList.remove('scale-100');
+            setTimeout(() => {
+                messageModal.classList.add('hidden');
+            }, 300); // Wait for animation to finish
+        });
+
+        // Function to format date from YYYY-MM-DD to DD/MM/YYYY
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        // Function to upload file to Firebase Storage
+        async function uploadFile(file) {
+            if (!file) return null;
+            imageUploadStatus.textContent = 'กำลังอัปโหลดรูปภาพ...';
+            imageUploadStatus.classList.remove('text-red-500');
+            imageUploadStatus.classList.add('text-amber-600');
+
+            const storageRef = storage.ref();
+            const fileName = `${Date.now()}-${file.name}`;
+            const imageRef = storageRef.child(`bill_images/${userId}/${fileName}`);
+
+            try {
+                const snapshot = await imageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                imageUploadStatus.textContent = 'อัปโหลดสำเร็จ!';
+                imageUploadStatus.classList.remove('text-amber-600');
+                imageUploadStatus.classList.add('text-green-600');
+                return downloadURL;
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                imageUploadStatus.textContent = `อัปโหลดล้มเหลว: ${error.message}`;
+                imageUploadStatus.classList.remove('text-amber-600', 'text-green-600');
+                imageUploadStatus.classList.add('text-red-500');
+                showMessage('ข้อผิดพลาด', `ไม่สามารถอัปโหลดรูปภาพได้: ${error.message}`);
+                return null;
+            }
+        }
+
+        // --- Category Management (Config Page) ---
+
+        // Real-time listener for income categories
+        incomeCategoriesRef.on('value', (snapshot) => {
+            const categories = snapshot.val() || {};
+            incomeCategoriesList.innerHTML = ''; // Clear current list
+            // Only clear and repopulate transactionCategorySelect if the current type is income
+            if (transactionTypeSelect.value === 'income') {
+                transactionCategorySelect.innerHTML = '';
+            }
+            let hasIncomeCategory = false;
+            for (let key in categories) {
+                hasIncomeCategory = true;
+                const categoryName = categories[key];
+                const listItem = document.createElement('li');
+                listItem.className = 'flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-amber-200 text-xl hover:bg-amber-50 transition-colors duration-200';
+                listItem.innerHTML = `
+                    <span>${categoryName}</span>
+                    <button data-key="${key}" data-type="income" class="delete-category-btn text-red-600 hover:text-red-800 transition-colors duration-200 ml-4 p-2 rounded-full hover:bg-red-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                `;
+                incomeCategoriesList.appendChild(listItem);
+            }
+            if (!hasIncomeCategory) {
+                incomeCategoriesList.innerHTML = '<li class="text-gray-500 text-xl p-4">ยังไม่มีหมวดหมู่รายรับ</li>';
+            }
+            populateTransactionCategories(); // Re-populate dropdown on category change
+        });
+
+        // Real-time listener for expense categories
+        expenseCategoriesRef.on('value', (snapshot) => {
+            const categories = snapshot.val() || {};
+            expenseCategoriesList.innerHTML = ''; // Clear current list
+            // Only clear and repopulate transactionCategorySelect if the current type is expense
+            if (transactionTypeSelect.value === 'expense') {
+                transactionCategorySelect.innerHTML = '';
+            }
+            let hasExpenseCategory = false;
+            for (let key in categories) {
+                hasExpenseCategory = true;
+                const categoryName = categories[key];
+                const listItem = document.createElement('li');
+                listItem.className = 'flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-amber-200 text-xl hover:bg-amber-50 transition-colors duration-200';
+                listItem.innerHTML = `
+                    <span>${categoryName}</span>
+                    <button data-key="${key}" data-type="expense" class="delete-category-btn text-red-600 hover:text-red-800 transition-colors duration-200 ml-4 p-2 rounded-full hover:bg-red-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                `;
+                expenseCategoriesList.appendChild(listItem);
+            }
+            if (!hasExpenseCategory) {
+                expenseCategoriesList.innerHTML = '<li class="text-gray-500 text-xl p-4">ยังไม่มีหมวดหมู่รายจ่าย</li>';
+            }
+            populateTransactionCategories(); // Re-populate dropdown on category change
+        });
+
+        // Add income category
+        addIncomeCategoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const categoryName = newIncomeCategoryInput.value.trim();
+            if (categoryName) {
+                incomeCategoriesRef.push(categoryName)
+                    .then(() => {
+                        newIncomeCategoryInput.value = '';
+                        showMessage('สำเร็จ', 'เพิ่มหมวดหมู่รายรับแล้ว');
+                    })
+                    .catch(error => {
+                        console.error("Error adding income category:", error);
+                        showMessage('ข้อผิดพลาด', `ไม่สามารถเพิ่มหมวดหมู่รายรับได้: ${error.message}`);
+                    });
+            } else {
+                showMessage('แจ้งเตือน', 'กรุณากรอกชื่อหมวดหมู่รายรับ');
+            }
+        });
+
+        // Add expense category
+        addExpenseCategoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const categoryName = newExpenseCategoryInput.value.trim();
+            if (categoryName) {
+                expenseCategoriesRef.push(categoryName)
+                    .then(() => {
+                        newExpenseCategoryInput.value = '';
+                        showMessage('สำเร็จ', 'เพิ่มหมวดหมู่รายจ่ายแล้ว');
+                    })
+                    .catch(error => {
+                        console.error("Error adding expense category:", error);
+                        showMessage('ข้อผิดพลาด', `ไม่สามารถเพิ่มหมวดหมู่รายจ่ายได้: ${error.message}`);
+                    });
+            } else {
+                showMessage('แจ้งเตือน', 'กรุณากรอกชื่อหมวดหมู่รายจ่าย');
+            }
+        });
+
+        // Delete category handler (using event delegation)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-category-btn')) {
+                const button = e.target.closest('.delete-category-btn');
+                const key = button.dataset.key;
+                const type = button.dataset.type;
+                const categoryRef = type === 'income' ? incomeCategoriesRef : expenseCategoriesRef;
+
+                // Show confirmation modal
+                transactionToDeleteKey = key; // Use the same variable for category key
+                confirmationModal.classList.remove('hidden');
+                confirmationModal.querySelector('div').classList.add('scale-100');
+                confirmationModal.querySelector('div').classList.remove('scale-95');
+
+
+                // Set up event listeners for modal buttons
+                confirmDeleteBtn.onclick = () => {
+                    categoryRef.child(key).remove()
+                        .then(() => {
+                            showMessage('สำเร็จ', 'ลบหมวดหมู่แล้ว');
+                            confirmationModal.classList.add('hidden');
+                        })
+                        .catch(error => {
+                            console.error("Error removing category:", error);
+                            showMessage('ข้อผิดพลาด', `ไม่สามารถลบหมวดหมู่ได้: ${error.message}`);
+                            confirmationModal.classList.add('hidden');
+                        });
+                };
+                cancelDeleteBtn.onclick = () => {
+                    confirmationModal.querySelector('div').classList.add('scale-95');
+                    confirmationModal.querySelector('div').classList.remove('scale-100');
+                    setTimeout(() => {
+                        confirmationModal.classList.add('hidden');
+                        transactionToDeleteKey = null;
+                    }, 300); // Wait for animation
+                };
+            }
+        });
+
+        // Populate categories in the record transaction form
+        async function populateTransactionCategories() {
+            transactionCategorySelect.innerHTML = ''; // Clear existing options
+
+            const transactionType = transactionTypeSelect.value;
+            const ref = transactionType === 'income' ? incomeCategoriesRef : expenseCategoriesRef;
+
+            try {
+                const snapshot = await ref.once('value');
+                const categories = snapshot.val() || {};
+                if (Object.keys(categories).length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = `ยังไม่มีหมวดหมู่${transactionType === 'income' ? 'รายรับ' : 'รายจ่าย'}`;
+                    option.disabled = true;
+                    option.selected = true;
+                    transactionCategorySelect.appendChild(option);
+                    return;
+                }
+                for (let key in categories) {
+                    const option = document.createElement('option');
+                    option.value = categories[key];
+                    option.textContent = categories[key];
+                    transactionCategorySelect.appendChild(option);
+                }
+            } catch (error) {
+                console.error("Error populating transaction categories:", error);
+                showMessage('ข้อผิดพลาด', `ไม่สามารถโหลดหมวดหมู่ได้: ${error.message}`);
+            }
+        }
+
+        // Listen for transaction type change to update categories dropdown
+        transactionTypeSelect.addEventListener('change', populateTransactionCategories);
+
+
+        // --- Record Transaction (Record Page) ---
+
+        // Set default date to today
+        transactionDateInput.value = new Date().toISOString().slice(0, 10);
+
+        recordTransactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const type = transactionTypeSelect.value;
+            const date = transactionDateInput.value;
+            const amount = parseFloat(transactionAmountInput.value);
+            const category = transactionCategorySelect.value;
+            const description = transactionDescriptionInput.value.trim();
+            const billImageFile = billImageInput.files[0];
+
+            if (!amount || amount <= 0) {
+                showMessage('แจ้งเตือน', 'กรุณากรอกจำนวนเงินที่ถูกต้อง');
+                return;
+            }
+            if (!category) {
+                 showMessage('แจ้งเตือน', `กรุณาเพิ่มหมวดหมู่${type === 'income' ? 'รายรับ' : 'รายจ่าย'}ก่อน`);
+                 return;
+            }
+
+            let imageUrl = null;
+            if (billImageFile) {
+                imageUrl = await uploadFile(billImageFile);
+                if (!imageUrl) {
+                    // Upload failed, stop transaction record
+                    return;
+                }
+            }
+
+            const transactionData = {
+                type,
+                date,
+                amount,
+                category,
+                description,
+                imageUrl,
+                timestamp: firebase.database.ServerValue.TIMESTAMP // Record server timestamp
+            };
+
+            // Check if it's an edit operation (has an 'data-key' attribute)
+            const editingKey = recordTransactionForm.dataset.editingKey;
+            if (editingKey) {
+                transactionsRef.child(editingKey).update(transactionData)
+                    .then(() => {
+                        showMessage('สำเร็จ', 'อัปเดตข้อมูลรายรับ-รายจ่ายแล้ว');
+                        recordTransactionForm.reset();
+                        billImageInput.value = ''; // Clear file input
+                        imageUploadStatus.textContent = '';
+                        delete recordTransactionForm.dataset.editingKey; // Remove editing key
+                        transactionDateInput.value = new Date().toISOString().slice(0, 10); // Reset date
+                        populateTransactionCategories(); // Re-populate categories
+                        showPage('viewPage'); // Go back to view page
+                    })
+                    .catch(error => {
+                        console.error("Error updating transaction:", error);
+                        showMessage('ข้อผิดพลาด', `ไม่สามารถอัปเดตข้อมูลได้: ${error.message}`);
+                    });
+            } else {
+                // New transaction
+                transactionsRef.push(transactionData)
+                    .then(() => {
+                        showMessage('สำเร็จ', 'บันทึกรายรับ-รายจ่ายแล้ว');
+                        recordTransactionForm.reset();
+                        billImageInput.value = ''; // Clear file input
+                        imageUploadStatus.textContent = '';
+                        transactionDateInput.value = new Date().toISOString().slice(0, 10); // Reset date
+                        populateTransactionCategories(); // Re-populate categories
+                    })
+                    .catch(error => {
+                        console.error("Error saving transaction:", error);
+                        showMessage('ข้อผิดพลาด', `ไม่สามารถบันทึกข้อมูลได้: ${error.message}`);
+                    });
+            }
+        });
+
+
+        // --- View Data (View Page) ---
+
+        // Populate month and year dropdowns
+        function populateMonthYearDropdowns() {
+            monthSelect.innerHTML = '';
+            const months = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index + 1; // 1-indexed month
+                option.textContent = month;
+                if (index + 1 === currentMonth) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            });
+
+            yearSelect.innerHTML = '';
+            const currentYearFull = new Date().getFullYear();
+            for (let i = currentYearFull; i >= currentYearFull - 5; i--) { // Show current year and 5 past years
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // Load transactions based on selected month/year
+        function loadTransactions() {
+            const selectedMonth = parseInt(monthSelect.value);
+            const selectedYear = parseInt(yearSelect.value);
+
+            // Hide annual summary section when loading monthly data
+            annualSummarySection.classList.add('hidden');
+            monthlySummarySection.classList.remove('hidden');
+
+            transactionsTableBody.innerHTML = '';
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const categoryData = {
+                income: {},
+                expense: {}
+            }; // For pie chart
+            const allTransactions = []; // To store all transactions for currentMonthlyData
+
+
+            transactionsRef.on('value', (snapshot) => {
+                transactionsTableBody.innerHTML = ''; // Clear before re-rendering
+                totalIncome = 0; // Reset totals
+                totalExpense = 0;
+                for (const key in categoryData.income) delete categoryData.income[key];
+                for (const key in categoryData.expense) delete categoryData.expense[key];
+                allTransactions.length = 0; // Clear previous transactions
+
+
+                const transactions = snapshot.val() || {};
+                const filteredTransactions = [];
+
+                for (let key in transactions) {
+                    const transaction = transactions[key];
+                    const transactionDate = new Date(transaction.date);
+                    if (transactionDate.getMonth() + 1 === selectedMonth && transactionDate.getFullYear() === selectedYear) {
+                        filteredTransactions.push({ key, ...transaction });
+                        allTransactions.push(transaction); // Add to allTransactions for AI analysis
+
+                        if (transaction.type === 'income') {
+                            totalIncome += transaction.amount;
+                            categoryData.income[transaction.category] = (categoryData.income[transaction.category] || 0) + transaction.amount;
+                        } else {
+                            totalExpense += transaction.amount;
+                            categoryData.expense[transaction.category] = (categoryData.expense[transaction.category] || 0) + transaction.amount;
+                        }
+                    }
+                }
+
+                // Sort transactions by date (newest first)
+                filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                if (filteredTransactions.length === 0) {
+                    transactionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500 text-xl">ไม่มีข้อมูลรายรับ-รายจ่ายสำหรับเดือนนี้</td></tr>';
+                } else {
+                    filteredTransactions.forEach(transaction => {
+                        const row = transactionsTableBody.insertRow();
+                        row.className = 'hover:bg-gray-50';
+                        const amountClass = transaction.type === 'income' ? 'text-green-600' : 'text-red-600';
+
+                        row.innerHTML = `
+                            <td class="py-3 px-4 border-b border-gray-200 text-lg">${formatDateForDisplay(transaction.date)}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-lg">${transaction.type === 'income' ? 'รายรับ' : 'รายจ่าย'}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-lg">${transaction.category}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-lg">${transaction.description || '-'}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-right font-semibold ${amountClass} text-lg">${transaction.amount.toFixed(2)}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                ${transaction.imageUrl ? `<a href="${transaction.imageUrl}" target="_blank" class="text-amber-600 hover:underline text-lg">ดูบิล</a>` : '-'}
+                            </td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-center">
+                                <button data-key="${transaction.key}" class="edit-btn bg-amber-500 text-white p-2 rounded-lg hover:bg-amber-600 transition-colors duration-200 text-base shadow-md transform hover:scale-105">
+                                    แก้ไข
+                                </button>
+                                <button data-key="${transaction.key}" data-image-url="${transaction.imageUrl || ''}" class="delete-btn bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors duration-200 text-base shadow-md transform hover:scale-105">
+                                    ลบ
+                                </button>
+                            </td>
+                        `;
+                    });
+                }
+
+                totalIncomeSpan.textContent = totalIncome.toFixed(2);
+                totalExpenseSpan.textContent = totalExpense.toFixed(2);
+                balanceSpan.textContent = (totalIncome - totalExpense).toFixed(2);
+                updatePieChart(categoryData.income, categoryData.expense);
+
+                // Store current monthly data for AI analysis
+                currentMonthlyData = {
+                    month: selectedMonth,
+                    year: selectedYear,
+                    totalIncome: totalIncome,
+                    totalExpense: totalExpense,
+                    balance: (totalIncome - totalExpense),
+                    incomeCategories: categoryData.income,
+                    expenseCategories: categoryData.expense,
+                    transactions: allTransactions
+                };
+                 // Hide AI analysis result when data reloads
+                monthlyAnalysisResult.classList.add('hidden');
+                monthlyAnalysisContent.textContent = '';
+            });
+        }
+
+        // Load annual summary (for monthly chart)
+        function loadAnnualSummary() {
+            const selectedYear = parseInt(yearSelect.value);
+
+            // Hide monthly summary section when loading annual data
+            monthlySummarySection.classList.add('hidden');
+            annualSummarySection.classList.remove('hidden');
+
+            const monthlyIncome = Array(12).fill(0);
+            const monthlyExpense = Array(12).fill(0);
+            const monthlyBalance = Array(12).fill(0);
+            
+            let annualTotalIncome = 0;
+            let annualTotalExpense = 0;
+            const annualIncomeCategoryTotals = {};
+            const annualExpenseCategoryTotals = {};
+            const monthlyTransactionSummary = []; // For AI analysis
+
+
+            annualSummaryTableBody.innerHTML = '';
+            annualIncomeCategoryList.innerHTML = '';
+            annualExpenseCategoryList.innerHTML = '';
+            noAnnualIncomeCategoriesPara.classList.add('hidden');
+            noAnnualExpenseCategoriesPara.classList.add('hidden');
+
+
+            transactionsRef.on('value', (snapshot) => {
+                // Reset monthly data for recalculation
+                monthlyIncome.fill(0);
+                monthlyExpense.fill(0);
+                monthlyBalance.fill(0);
+                annualSummaryTableBody.innerHTML = '';
+                annualIncomeCategoryList.innerHTML = '';
+                annualExpenseCategoryList.innerHTML = '';
+                noAnnualIncomeCategoriesPara.classList.add('hidden');
+                noAnnualExpenseCategoriesPara.classList.add('hidden');
+                annualTotalIncome = 0;
+                annualTotalExpense = 0;
+                for (const key in annualIncomeCategoryTotals) delete annualIncomeCategoryTotals[key];
+                for (const key in annualExpenseCategoryTotals) delete annualExpenseCategoryTotals[key];
+                monthlyTransactionSummary.length = 0; // Clear previous data
+
+
+                const transactions = snapshot.val() || {};
+                for (let key in transactions) {
+                    const transaction = transactions[key];
+                    const transactionDate = new Date(transaction.date);
+                    if (transactionDate.getFullYear() === selectedYear) {
+                        const monthIndex = transactionDate.getMonth(); // 0-11
+                        if (transaction.type === 'income') {
+                            monthlyIncome[monthIndex] += transaction.amount;
+                            annualTotalIncome += transaction.amount;
+                            annualIncomeCategoryTotals[transaction.category] = (annualIncomeCategoryTotals[transaction.category] || 0) + transaction.amount;
+                        } else {
+                            monthlyExpense[monthIndex] += transaction.amount;
+                            annualTotalExpense += transaction.amount;
+                            annualExpenseCategoryTotals[transaction.category] = (annualExpenseCategoryTotals[transaction.category] || 0) + transaction.amount;
+                        }
+                    }
+                }
+
+                const months = [
+                    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+                ];
+
+                let hasMonthlyData = false;
+                for (let i = 0; i < 12; i++) {
+                    const income = monthlyIncome[i];
+                    const expense = monthlyExpense[i];
+                    const balance = income - expense;
+                    monthlyBalance[i] = balance;
+
+                    if (income > 0 || expense > 0) {
+                        hasMonthlyData = true;
+                        const row = annualSummaryTableBody.insertRow();
+                        row.className = 'hover:bg-gray-50';
+                        const balanceClass = balance >= 0 ? 'text-blue-600' : 'text-red-600';
+                        row.innerHTML = `
+                            <td class="py-3 px-4 border-b border-gray-200 text-lg">${months[i]}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-right text-green-600 font-semibold text-lg">${income.toFixed(2)}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-right text-red-600 font-semibold text-lg">${expense.toFixed(2)}</td>
+                            <td class="py-3 px-4 border-b border-gray-200 text-right ${balanceClass} font-bold text-lg">${balance.toFixed(2)}</td>
+                        `;
+                    }
+                    monthlyTransactionSummary.push({
+                        month: months[i],
+                        income: income,
+                        expense: expense,
+                        balance: balance
+                    });
+                }
+
+                if (!hasMonthlyData) {
+                    annualSummaryTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500 text-xl">ไม่มีข้อมูลรายรับ-รายจ่ายรายเดือนสำหรับปีนี้</td></tr>';
+                }
+
+                updateMonthlyChart(months, monthlyIncome, monthlyExpense);
+
+                // Update Annual Totals Summary
+                annualTotalIncomeSpan.textContent = annualTotalIncome.toFixed(2);
+                annualTotalExpenseSpan.textContent = annualTotalExpense.toFixed(2);
+                annualBalanceSpan.textContent = (annualTotalIncome - annualTotalExpense).toFixed(2);
+
+                // Populate Annual Category Summary
+                let hasAnnualIncomeCategories = false;
+                for (const category in annualIncomeCategoryTotals) {
+                    hasAnnualIncomeCategories = true;
+                    const listItem = document.createElement('li');
+                    listItem.className = 'text-gray-700';
+                    listItem.textContent = `${category}: ${annualIncomeCategoryTotals[category].toFixed(2)} บาท`;
+                    annualIncomeCategoryList.appendChild(listItem);
+                }
+                if (!hasAnnualIncomeCategories) {
+                    noAnnualIncomeCategoriesPara.classList.remove('hidden');
+                } else {
+                    noAnnualIncomeCategoriesPara.classList.add('hidden');
+                }
+
+                let hasAnnualExpenseCategories = false;
+                for (const category in annualExpenseCategoryTotals) {
+                    hasAnnualExpenseCategories = true;
+                    const listItem = document.createElement('li');
+                    listItem.className = 'text-gray-700';
+                    listItem.textContent = `${category}: ${annualExpenseCategoryTotals[category].toFixed(2)} บาท`;
+                    annualExpenseCategoryList.appendChild(listItem);
+                }
+                if (!hasAnnualExpenseCategories) {
+                    noAnnualExpenseCategoriesPara.classList.remove('hidden');
+                } else {
+                    noAnnualExpenseCategoriesPara.classList.add('hidden');
+                }
+
+                // Store current annual data for AI analysis
+                currentAnnualData = {
+                    year: selectedYear,
+                    totalIncome: annualTotalIncome,
+                    totalExpense: annualTotalExpense,
+                    balance: (annualTotalIncome - annualTotalExpense),
+                    incomeCategories: annualIncomeCategoryTotals,
+                    expenseCategories: annualExpenseCategoryTotals,
+                    monthlySummary: monthlyTransactionSummary
+                };
+                // Hide AI analysis result when data reloads
+                annualAnalysisResult.classList.add('hidden');
+                annualAnalysisContent.textContent = '';
+            });
+        }
+
+
+        // Chart.js - Pie Chart (Income/Expense Proportions)
+        function updatePieChart(incomeData, expenseData) {
+            if (pieChart) {
+                pieChart.destroy(); // Destroy existing chart before creating a new one
+            }
+
+            const incomeLabels = Object.keys(incomeData);
+            const incomeValues = Object.values(incomeData);
+            const expenseLabels = Object.keys(expenseData);
+            const expenseValues = Object.values(expenseData);
+
+            // Cool tones for income (Blue, Cyan, Sky, Indigo, Teal, Turquoise)
+            const coolColors = [
+                '#3B82F6', '#22D3EE', '#60A5FA', '#0EA5E9', '#1D4ED8', '#0F766E', '#06B6D4',
+                '#38BDF8', '#7DD3FC', '#A78BFA'
+            ];
+            // Warm tones for expense (Red, Orange, Amber, Deep Orange)
+            const warmColors = [
+                '#EF4444', '#F97316', '#F59E0B', '#DC2626', '#EA580C', '#D97706', '#B91C1C',
+                '#FECDD3', '#FCA5A5', '#FDBA74'
+            ];
+
+            const totalPieLabels = [...incomeLabels.map(l => `รายรับ: ${l}`), ...expenseLabels.map(l => `รายจ่าย: ${l}`)];
+            const totalPieValues = [...incomeValues, ...expenseValues];
+            const totalPieColors = [...coolColors.slice(0, incomeLabels.length), ...warmColors.slice(0, expenseLabels.length)];
+
+            // Handle case where there's no data
+            if (totalPieValues.reduce((sum, val) => sum + val, 0) === 0) {
+                totalPieLabels.push('ไม่มีข้อมูล');
+                totalPieValues.push(1); // Give it a slice to show "no data"
+                totalPieColors.push('#D1D5DB'); // Gray for no data
+            }
+
+            pieChart = new Chart(pieChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: totalPieLabels,
+                    datasets: [{
+                        data: totalPieValues,
+                        backgroundColor: totalPieColors,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    size: 14 // Adjust font size for legend
+                                },
+                                color: '#4B5563' // Darker gray for legend text
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'สัดส่วนรายรับ-รายจ่ายตามหมวดหมู่',
+                            font: {
+                                size: 20
+                            },
+                            color: '#1E3A8A' // Dark blue for title
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart.js - Monthly Income/Expense Chart
+        function updateMonthlyChart(labels, incomeData, expenseData) {
+            if (monthlyChart) {
+                monthlyChart.destroy(); // Destroy existing chart
+            }
+
+            monthlyChart = new Chart(monthlyChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'รายรับ',
+                            data: incomeData,
+                            backgroundColor: '#3B82F6', // Blue (cool)
+                            borderColor: '#1D4ED8',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        },
+                        {
+                            label: 'รายจ่าย',
+                            data: expenseData,
+                            backgroundColor: '#EF4444', // Red (warm)
+                            borderColor: '#DC2626',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                color: '#4B5563' // Darker gray for legend text
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'รายรับ-รายจ่ายรายเดือน',
+                            font: {
+                                size: 20
+                            },
+                            color: '#1E3A8A' // Dark blue for title
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'จำนวนเงิน (บาท)',
+                                font: {
+                                    size: 16
+                                },
+                                color: '#4B5563' // Darker gray for axis title
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return new Intl.NumberFormat('th-TH').format(value);
+                                },
+                                color: '#6B7280' // Medium gray for ticks
+                            },
+                            grid: {
+                                color: '#E5E7EB' // Lighter grid lines
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'เดือน',
+                                font: {
+                                    size: 16
+                                },
+                                color: '#4B5563' // Darker gray for axis title
+                            },
+                            ticks: {
+                                color: '#6B7280' // Medium gray for ticks
+                            },
+                            grid: {
+                                color: '#E5E7EB' // Lighter grid lines
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        // Event listeners for month/year filter
+        monthSelect.addEventListener('change', () => {
+            currentMonth = parseInt(monthSelect.value);
+            loadTransactions(); // Reload transactions for new month
+        });
+        yearSelect.addEventListener('change', () => {
+            currentYear = parseInt(yearSelect.value);
+            // If in monthly summary view, reload monthly data
+            if (!monthlySummarySection.classList.contains('hidden')) {
+                 loadTransactions();
+            } else { // If in annual summary view, reload annual data
+                loadAnnualSummary();
+            }
+        });
+
+        // Toggle between monthly and annual summary views
+        showMonthlySummaryBtn.addEventListener('click', () => {
+            monthlySummarySection.classList.remove('hidden');
+            annualSummarySection.classList.add('hidden');
+            loadTransactions(); // Ensure monthly data is loaded
+        });
+
+        showAnnualSummaryBtn.addEventListener('click', () => {
+            monthlySummarySection.classList.add('hidden');
+            annualSummarySection.classList.remove('hidden');
+            loadAnnualSummary(); // Ensure annual data is loaded
+        });
+
+
+        // Edit/Delete Transaction Handler (using event delegation)
+        transactionsTableBody.addEventListener('click', (e) => {
+            // Handle Edit button click
+            if (e.target.classList.contains('edit-btn')) {
+                const key = e.target.dataset.key;
+                transactionsRef.child(key).once('value', (snapshot) => {
+                    const transaction = snapshot.val();
+                    if (transaction) {
+                        // Populate the record form for editing
+                        transactionTypeSelect.value = transaction.type;
+                        transactionDateInput.value = transaction.date;
+                        transactionAmountInput.value = transaction.amount;
+                        transactionDescriptionInput.value = transaction.description;
+
+                        // Ensure categories are populated before setting value
+                        // Use async/await with populateTransactionCategories as it returns a Promise
+                        populateTransactionCategories().then(() => {
+                            transactionCategorySelect.value = transaction.category;
+                        }).catch(error => console.error("Error populating categories for edit:", error));
+
+
+                        // Store the key of the transaction being edited
+                        recordTransactionForm.dataset.editingKey = key;
+                        imageUploadStatus.textContent = 'หากต้องการเปลี่ยนบิล ให้เลือกไฟล์ใหม่';
+
+                        // Switch to record page
+                        showPage('recordPage');
+                        showMessage('แก้ไขรายการ', 'กำลังแก้ไขรายการ กรุณาแก้ไขข้อมูลและกดบันทึก');
+                    }
+                });
+            }
+
+            // Handle Delete button click
+            if (e.target.classList.contains('delete-btn')) {
+                const key = e.target.dataset.key;
+                const imageUrl = e.target.dataset.imageUrl;
+
+                // Show confirmation modal
+                transactionToDeleteKey = key;
+                transactionToDeleteImageUrl = imageUrl; // Store image URL for deletion
+                confirmationModal.classList.remove('hidden');
+                confirmationModal.querySelector('div').classList.add('scale-100');
+                confirmationModal.querySelector('div').classList.remove('scale-95');
+
+
+                // Set up event listeners for modal buttons
+                confirmDeleteBtn.onclick = () => {
+                    transactionsRef.child(key).remove()
+                        .then(() => {
+                            // If there's an image, delete it from storage
+                            if (imageUrl) {
+                                const imageRef = storage.refFromURL(imageUrl);
+                                imageRef.delete().then(() => {
+                                    console.log("Image deleted from storage.");
+                                }).catch((error) => {
+                                    console.warn("Could not delete image from storage:", error);
+                                    // Don't block deletion of record if image deletion fails
+                                });
+                            }
+                            showMessage('สำเร็จ', 'ลบข้อมูลรายรับ-รายจ่ายแล้ว');
+                            confirmationModal.classList.add('hidden');
+                        })
+                        .catch(error => {
+                            console.error("Error removing transaction:", error);
+                            showMessage('ข้อผิดพลาด', `ไม่สามารถลบข้อมูลได้: ${error.message}`);
+                            confirmationModal.classList.add('hidden');
+                        });
+                };
+                cancelDeleteBtn.onclick = () => {
+                    confirmationModal.querySelector('div').classList.add('scale-95');
+                    confirmationModal.querySelector('div').classList.remove('scale-100');
+                    setTimeout(() => {
+                        confirmationModal.classList.add('hidden');
+                        transactionToDeleteKey = null;
+                    }, 300); // Wait for animation
+                };
+            }
+        });
+
+        // --- PDF Generation Functions ---
+
+        // Helper function for adding text to PDF
+        function addTextToPdf(doc, text, x, y, options = {}) {
+            doc.text(text, x, y, options);
+            return y + (options.lineHeight || 10); // Return new Y position
+        }
+
+        // Generate Monthly PDF
+        printMonthlyPdfBtn.addEventListener('click', async () => {
+            showMessage('กำลังสร้าง PDF', 'กรุณารอสักครู่...');
+            const doc = new jspdf.jsPDF();
+            const margin = 15;
+            let yPos = margin;
+            const lineHeight = 7;
+            const headerFontSize = 18;
+            const contentFontSize = 10;
+            const thaiMonths = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            const selectedMonthName = thaiMonths[currentMonth - 1];
+
+            // --- Thai Font Support for jsPDF ---
+            // To properly display Thai characters in the PDF, you need to embed a Thai font.
+            // 1. Get a .ttf font file (e.g., "THSarabunNew.ttf").
+            // 2. Convert it to a Base64 string using an online tool.
+            // 3. Add the font to jsPDF's Virtual File System (VFS) and register it.
+            //    Example:
+            //    doc.addFileToVFS('THSarabunNew.ttf', 'YOUR_BASE64_ENCODED_FONT_STRING_HERE');
+            //    doc.addFont('THSarabunNew.ttf', 'THSarabunNew', 'normal');
+            // 4. Set the font for your document.
+            //    Example:
+            //    doc.setFont('THSarabunNew');
+            //    doc.setFontSize(contentFontSize);
+            // ------------------------------------
+
+            // Title
+            doc.setFontSize(headerFontSize);
+            yPos = addTextToPdf(doc, `สรุปรายรับ-รายจ่าย วัดหนองหล่ม เดือน ${selectedMonthName} ปี ${currentYear}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 10; // Extra spacing
+
+            // Add Pie Chart
+            const pieChartImg = pieChartCanvas.toDataURL('image/png');
+            const imgWidth = 100;
+            const imgHeight = (pieChartCanvas.height * imgWidth) / pieChartCanvas.width;
+            doc.addImage(pieChartImg, 'PNG', (doc.internal.pageSize.getWidth() - imgWidth) / 2, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 10; // Spacing after image
+
+            // Add Summary Totals
+            doc.setFontSize(contentFontSize + 2); // Slightly larger for totals
+            yPos = addTextToPdf(doc, `รายรับรวม: ${totalIncomeSpan.textContent} บาท`, margin, yPos);
+            yPos = addTextToPdf(doc, `รายจ่ายรวม: ${totalExpenseSpan.textContent} บาท`, margin, yPos);
+            yPos = addTextToPdf(doc, `คงเหลือ: ${balanceSpan.textContent} บาท`, margin, yPos);
+            yPos += 10; // Spacing
+
+            // Add Transactions Table
+            doc.setFontSize(contentFontSize);
+            yPos = addTextToPdf(doc, 'รายการรายรับ-รายจ่าย:', margin, yPos);
+            yPos += 5;
+
+            const tableData = [];
+            const tableHeaders = ['วันที่', 'ประเภท', 'หมวดหมู่', 'รายละเอียด', 'จำนวนเงิน', 'บิล'];
+            
+            // Collect table data, excluding the "จัดการ" column for PDF
+            monthlyTransactionsTable.querySelectorAll('tbody tr').forEach(row => {
+                const rowData = [];
+                row.querySelectorAll('td:not(:last-child)').forEach((cell, index) => {
+                    if (index === 5) { // 'บิล' column
+                        const link = cell.querySelector('a');
+                        rowData.push(link ? link.href : '-');
+                    } else {
+                        rowData.push(cell.innerText.trim());
+                    }
+                });
+                tableData.push(rowData);
+            });
+
+            if (tableData.length === 0) {
+                 doc.text('ไม่มีข้อมูลรายการสำหรับเดือนนี้', margin, yPos + 10);
+            } else {
+                doc.autoTable({
+                    startY: yPos,
+                    head: [tableHeaders],
+                    body: tableData,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: contentFontSize,
+                        cellPadding: 2,
+                        halign: 'center' // Default alignment
+                    },
+                    headStyles: {
+                        fillColor: '#FDF1E3', // Amber-100 equivalent for print
+                        textColor: '#92400E', // Amber-800 equivalent for print
+                        fontStyle: 'bold'
+                    },
+                    columnStyles: {
+                        0: { halign: 'left' },  // วันที่
+                        1: { halign: 'left' },  // ประเภท
+                        2: { halign: 'left' },  // หมวดหมู่
+                        3: { halign: 'left' },  // รายละเอียด
+                        4: { halign: 'right' }, // จำนวนเงิน
+                        5: { halign: 'center' } // บิล
+                    },
+                    margin: { left: margin, right: margin },
+                    didParseCell: function (data) {
+                        // Apply specific text colors for amount column
+                        if (data.column.index === 4 && data.section === 'body') {
+                            const amount = parseFloat(data.cell.text[0].replace(/[^0-9.-]+/g,"")); // Extract number from string
+                            if (data.row.raw[1] === 'รายรับ') { // Check 'ประเภท' column
+                                data.cell.styles.textColor = '#16A34A'; // Green-600
+                            } else if (data.row.raw[1] === 'รายจ่าย') {
+                                data.cell.styles.textColor = '#DC2626'; // Red-600
+                            }
+                        }
+                    }
+                });
+            }
+
+            doc.save(`รายงานรายรับรายจ่าย_${selectedMonthName}_${currentYear}.pdf`);
+            showMessage('สำเร็จ', 'สร้างเอกสาร PDF เสร็จสมบูรณ์');
+        });
+
+
+        // Generate Annual PDF
+        printAnnualPdfBtn.addEventListener('click', async () => {
+            showMessage('กำลังสร้าง PDF', 'กรุณารอสักครู่...');
+            const doc = new jspdf.jsPDF();
+            const margin = 15;
+            let yPos = margin;
+            const lineHeight = 7;
+            const headerFontSize = 18;
+            const contentFontSize = 10;
+            const selectedYearFull = parseInt(yearSelect.value);
+
+            // --- Thai Font Support for jsPDF ---
+            // To properly display Thai characters in the PDF, you need to embed a Thai font.
+            // 1. Get a .ttf font file (e.g., "THSarabunNew.ttf").
+            // 2. Convert it to a Base64 string using an online tool.
+            // 3. Add the font to jsPDF's Virtual File System (VFS) and register it.
+            //    Example:
+            //    doc.addFileToVFS('THSarabunNew.ttf', 'YOUR_BASE64_ENCODED_FONT_STRING_HERE');
+            //    doc.addFont('THSarabunNew.ttf', 'THSarabunNew', 'normal');
+            // 4. Set the font for your document.
+            //    Example:
+            //    doc.setFont('THSarabunNew');
+            //    doc.setFontSize(contentFontSize);
+            // ------------------------------------
+
+            // Title
+            doc.setFontSize(headerFontSize);
+            yPos = addTextToPdf(doc, `สรุปรายรับ-รายจ่าย วัดหนองหล่ม ประจำปี ${selectedYearFull}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 10; // Extra spacing
+
+            // Add Monthly Bar Chart
+            const monthlyChartImg = monthlyChartCanvas.toDataURL('image/png');
+            const imgWidth = 180; // Adjust width for A4
+            const imgHeight = (monthlyChartCanvas.height * imgWidth) / monthlyChartCanvas.width;
+            doc.addImage(monthlyChartImg, 'PNG', (doc.internal.pageSize.getWidth() - imgWidth) / 2, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 10; // Spacing after image
+
+            // Add Annual Totals Summary to PDF
+            doc.setFontSize(contentFontSize + 2);
+            yPos = addTextToPdf(doc, 'สรุปยอดรวมรายปี:', margin, yPos);
+            yPos = addTextToPdf(doc, `รายรับรวมทั้งปี: ${annualTotalIncomeSpan.textContent} บาท`, margin, yPos);
+            yPos = addTextToPdf(doc, `รายจ่ายรวมทั้งปี: ${annualTotalExpenseSpan.textContent} บาท`, margin, yPos);
+            yPos = addTextToPdf(doc, `คงเหลือสิ้นปี: ${annualBalanceSpan.textContent} บาท`, margin, yPos);
+            yPos += 10;
+
+            // Add Annual Category Summary to PDF
+            doc.setFontSize(contentFontSize);
+            yPos = addTextToPdf(doc, 'สรุปรายรับ-รายจ่ายตามหมวดหมู่รายปี:', margin, yPos);
+            yPos += 5;
+
+            const incomeCategoryData = [];
+            annualIncomeCategoryList.querySelectorAll('li').forEach(li => {
+                const parts = li.textContent.split(':');
+                if (parts.length === 2) {
+                    incomeCategoryData.push([parts[0].trim(), parts[1].trim()]);
+                }
+            });
+
+            const expenseCategoryData = [];
+            annualExpenseCategoryList.querySelectorAll('li').forEach(li => {
+                const parts = li.textContent.split(':');
+                if (parts.length === 2) {
+                    expenseCategoryData.push([parts[0].trim(), parts[1].trim()]);
+                }
+            });
+
+            if (incomeCategoryData.length > 0) {
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['หมวดหมู่รายรับ', 'จำนวนเงิน']],
+                    body: incomeCategoryData,
+                    theme: 'grid',
+                    styles: { fontSize: contentFontSize, cellPadding: 2 },
+                    headStyles: { fillColor: '#DCFCE7', textColor: '#14532D', fontStyle: 'bold' }, // Green-100, Green-900
+                    columnStyles: { 0: { halign: 'left' }, 1: { halign: 'right', textColor: '#16A34A' } },
+                    margin: { left: margin, right: margin }
+                });
+                yPos = doc.autoTable.previous.finalY + 10; // Update yPos after table
+            } else {
+                yPos = addTextToPdf(doc, 'ไม่มีข้อมูลหมวดหมู่รายรับ', margin, yPos + 5);
+                yPos += 5;
+            }
+
+            if (expenseCategoryData.length > 0) {
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['หมวดหมู่รายจ่าย', 'จำนวนเงิน']],
+                    body: expenseCategoryData,
+                    theme: 'grid',
+                    styles: { fontSize: contentFontSize, cellPadding: 2 },
+                    headStyles: { fillColor: '#FEE2E2', textColor: '#7F1D1D', fontStyle: 'bold' }, // Red-100, Red-900
+                    columnStyles: { 0: { halign: 'left' }, 1: { halign: 'right', textColor: '#DC2626' } },
+                    margin: { left: margin, right: margin }
+                });
+                yPos = doc.autoTable.previous.finalY + 10; // Update yPos after table
+            } else {
+                yPos = addTextToPdf(doc, 'ไม่มีข้อมูลหมวดหมู่รายจ่าย', margin, yPos + 5);
+                yPos += 5;
+            }
+            
+            // Add Annual Summary Table
+            doc.setFontSize(contentFontSize);
+            yPos = addTextToPdf(doc, 'สรุปรายรับ-รายจ่ายรายเดือน:', margin, yPos);
+            yPos += 5;
+
+            const tableData = [];
+            const tableHeaders = ['เดือน', 'รายรับ', 'รายจ่าย', 'คงเหลือ'];
+            
+            annualSummaryTable.querySelectorAll('tbody tr').forEach(row => {
+                const rowData = [];
+                row.querySelectorAll('td').forEach(cell => {
+                    rowData.push(cell.innerText.trim());
+                });
+                tableData.push(rowData);
+            });
+
+            if (tableData.length === 0) {
+                doc.text('ไม่มีข้อมูลสรุปรายปีสำหรับปีนี้', margin, yPos + 10);
+            } else {
+                doc.autoTable({
+                    startY: yPos,
+                    head: [tableHeaders],
+                    body: tableData,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: contentFontSize,
+                        cellPadding: 2,
+                        halign: 'center' // Default alignment
+                    },
+                    headStyles: {
+                        fillColor: '#FDF1E3', // Amber-100 equivalent for print
+                        textColor: '#92400E', // Amber-800 equivalent for print
+                        fontStyle: 'bold'
+                    },
+                    columnStyles: {
+                        0: { halign: 'left' },  // เดือน
+                        1: { halign: 'right', textColor: '#16A34A' }, // Green-600
+                        2: { halign: 'right', textColor: '#DC2626' }, // Red-600
+                        3: { halign: 'right' } // คงเหลือ
+                    },
+                    margin: { left: margin, right: margin },
+                    didParseCell: function (data) {
+                        // Apply specific text colors for balance column based on value
+                        if (data.column.index === 3 && data.section === 'body') {
+                            const balance = parseFloat(data.cell.text[0].replace(/[^0-9.-]+/g,"")); // Extract number
+                            if (balance >= 0) {
+                                data.cell.styles.textColor = '#2563EB'; // Blue-600
+                            } else {
+                                data.cell.styles.textColor = '#DC2626'; // Red-600
+                            }
+                        }
+                    }
+                });
+            }
+
+            doc.save(`รายงานรายรับรายจ่ายประจำปี_${selectedYearFull}.pdf`);
+            showMessage('สำเร็จ', 'สร้างเอกสาร PDF เสร็จสมบูรณ์');
+        });
+
+        // --- Gemini AI Integration ---
+
+        async function callGeminiAPI(prompt, loaderElement, contentElement) {
+            loaderElement.classList.remove('hidden');
+            contentElement.textContent = '';
+            contentElement.parentElement.classList.remove('hidden'); // Show analysis result box
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas will provide this at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // Exponential backoff for API calls
+            const maxRetries = 5;
+            let retryCount = 0;
+            let delay = 1000; // 1 second
+
+            while (retryCount < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429) { // Too Many Requests
+                        console.warn(`Rate limit hit. Retrying in ${delay / 1000} seconds...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                        retryCount++;
+                        continue;
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        contentElement.textContent = text;
+                    } else {
+                        contentElement.textContent = "ไม่สามารถสร้างการวิเคราะห์ได้ กรุณาลองอีกครั้ง";
+                        console.error("Unexpected Gemini API response structure:", result);
+                    }
+                    loaderElement.classList.add('hidden');
+                    return; // Exit loop on success
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    contentElement.textContent = `เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}`;
+                    loaderElement.classList.add('hidden');
+                    return; // Exit loop on error
+                }
+                }
+            contentElement.textContent = "ไม่สามารถสร้างการวิเคราะห์ได้หลังจากลองหลายครั้ง";
+            loaderElement.classList.add('hidden');
+        }
+
+
+        analyzeMonthlyDataBtn.addEventListener('click', async () => {
+            if (!currentMonthlyData || currentMonthlyData.transactions.length === 0) {
+                showMessage('แจ้งเตือน', 'ไม่มีข้อมูลรายรับ-รายจ่ายสำหรับเดือนนี้เพื่อวิเคราะห์');
+                monthlyAnalysisResult.classList.add('hidden');
+                return;
+            }
+
+            const prompt = `วิเคราะห์ข้อมูลรายรับรายจ่ายของวัดหนองหล่มในเดือน ${currentMonthlyData.month} ปี ${currentMonthlyData.year} และสรุปเป็นภาษาไทยอย่างกระชับ ให้เน้นจุดเด่นที่สำคัญ เช่น
+            - ยอดรวมรายรับ รายจ่าย คงเหลือ
+            - หมวดหมู่ที่มีรายรับสูงสุดและต่ำสุด
+            - หมวดหมู่ที่มีรายจ่ายสูงสุดและต่ำสุด
+            - ข้อสังเกตหรือแนวโน้มที่น่าสนใจ
+            
+            ข้อมูล:
+            ยอดรวมรายรับ: ${currentMonthlyData.totalIncome.toFixed(2)} บาท
+            ยอดรวมรายจ่าย: ${currentMonthlyData.totalExpense.toFixed(2)} บาท
+            ยอดคงเหลือ: ${currentMonthlyData.balance.toFixed(2)} บาท
+            
+            รายรับตามหมวดหมู่: ${JSON.stringify(currentMonthlyData.incomeCategories)}
+            รายจ่ายตามหมวดหมู่: ${JSON.stringify(currentMonthlyData.expenseCategories)}
+            
+            รายการทั้งหมด: ${JSON.stringify(currentMonthlyData.transactions.map(t => ({ date: t.date, type: t.type, category: t.category, amount: t.amount })))}
+            
+            เขียนสรุปในรูปแบบข้อความธรรมดา`;
+
+            await callGeminiAPI(prompt, monthlyAnalysisLoader, monthlyAnalysisContent);
+        });
+
+        analyzeAnnualDataBtn.addEventListener('click', async () => {
+            if (!currentAnnualData || (currentAnnualData.totalIncome === 0 && currentAnnualData.totalExpense === 0)) {
+                showMessage('แจ้งเตือน', 'ไม่มีข้อมูลรายรับ-รายจ่ายสำหรับปีนี้เพื่อวิเคราะห์');
+                annualAnalysisResult.classList.add('hidden');
+                return;
+            }
+
+            const prompt = `วิเคราะห์ข้อมูลรายรับรายจ่ายของวัดหนองหล่มประจำปี ${currentAnnualData.year} และสรุปเป็นภาษาไทยอย่างกระชับ ให้เน้นจุดเด่นที่สำคัญ เช่น
+            - ยอดรวมรายรับ รายจ่าย คงเหลือของทั้งปี
+            - แนวโน้มรายรับรายจ่ายในแต่ละเดือน (เช่น เดือนไหนสูงสุด เดือนไหนต่ำสุด)
+            - หมวดหมู่รายรับและรายจ่ายหลักของปี
+            - ข้อสังเกตหรือแนวโน้มที่น่าสนใจตลอดทั้งปี
+            
+            ข้อมูล:
+            ยอดรวมรายรับทั้งปี: ${currentAnnualData.totalIncome.toFixed(2)} บาท
+            ยอดรวมรายจ่ายทั้งปี: ${currentAnnualData.totalExpense.toFixed(2)} บาท
+            ยอดคงเหลือสิ้นปี: ${currentAnnualData.balance.toFixed(2)} บาท
+            
+            รายรับตามหมวดหมู่ทั้งปี: ${JSON.stringify(currentAnnualData.incomeCategories)}
+            รายจ่ายตามหมวดหมู่ทั้งปี: ${JSON.stringify(currentAnnualData.expenseCategories)}
+            
+            สรุปรายรับรายจ่ายรายเดือน: ${JSON.stringify(currentAnnualData.monthlySummary)}
+            
+            เขียนสรุปในรูปแบบข้อความธรรมดา`;
+
+            await callGeminiAPI(prompt, annualAnalysisLoader, annualAnalysisContent);
+        });
+
+
+        // --- Initial Load and Event Listeners ---
+        window.onload = () => {
+            populateMonthYearDropdowns();
+            loadTransactions(); // Initial load of data for the current month/year
+            populateTransactionCategories(); // Initial load of categories for record form
+            showPage('recordPage'); // Start on the record page
+        };
+
+        // Navigation button event listeners
+        recordNavBtn.addEventListener('click', () => showPage('recordPage'));
+        viewNavBtn.addEventListener('click', () => {
+            showPage('viewPage');
+            // Ensure the correct summary section is active based on user's last selection or default
+            if (!annualSummarySection.classList.contains('hidden')) {
+                loadAnnualSummary();
+            } else {
+                loadTransactions();
+            }
+        });
+        configNavBtn.addEventListener('click', () => showPage('configPage'));
+
+    </script>
+</body>
+</html>
